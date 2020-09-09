@@ -1,8 +1,15 @@
 [package]
 name = "inclip"
 version = "1.0.0"
-authors = ["Griffin O'Neill <gsoneill1003@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "A simple terminal utility for clipboard interaction and convenience."
+authors = ["Griffin O'Neill <gsoneill1003@gmail.com>"]
+keywords = ["terminal", "clipboard", "utility", "cli"]
+categories = ["command-line-utilities", "text-processing"]
+repository = "https://github.com/Eolu/inclip"
+homepage = "https://github.com/Eolu/inclip"
+readme = "README.md"
 
 [dependencies]
 clap = "2.33"
