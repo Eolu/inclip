@@ -8,7 +8,7 @@ USAGE:
         Echo clipboard content
     inclip diff [file] [args...]
         Perform a comparison of clipboard content against a file or other
-        clipboard content. On Mac nad Linux, accepts all args that the `diff`
+        clipboard content. On Mac and Linux, accepts all args that the `diff`
         command accepts. On Windows, accepts all args that the `fc.exe` command
         accepts. The only important note to make is that if a file is included,
         it must come before all other arguments that would usually be passed to
