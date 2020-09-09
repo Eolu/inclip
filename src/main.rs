@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn Error>>
 {
     // Parse args
     let args = App::new("inclip")
-        .version("0.9.2")
+        .version("1.0.0")
         .usage("inclip \n    inclip diff [file] [args...]")
         .author("Griffin O'Neill <gsoneill1003@gmail.com>")
         .about("Echo clipboard contents")
