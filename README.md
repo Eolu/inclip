@@ -6,7 +6,7 @@ Note: I wrote this originally on Linux, but I noticed that Windows already has a
 
 ```
 USAGE:
-    clip.exe [OPTIONS] [SUBCOMMAND]
+    clip [OPTIONS] [SUBCOMMAND]
 
 FLAGS:
     -h, --help       Prints help information
