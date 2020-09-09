@@ -24,13 +24,12 @@ fn main() -> Result<(), Box<dyn Error>>
 
     // Get clipboard contents
     let mut context: ClipboardContext = ClipboardProvider::new().unwrap();
-    let clipboard_contents = get_clip_contents(&mut context);
 
     // Determine whether this is an echo or a diff
     if let Some(args) = args.subcommand_matches("diff") 
     {
         // Make sure there's something in the clipboard
-        let clipboard_contents = match clipboard_contents
+        let clipboard_contents = match get_clip_contents(&mut context)
         {
             Ok(None) => wait_for_clipboard(&mut context),
             contents => contents
@@ -63,7 +62,7 @@ fn main() -> Result<(), Box<dyn Error>>
     }
     else
     {
-        Ok(match clipboard_contents?
+        Ok(match get_clip_contents(&mut context)?
         {
             Some(contents) => println!("{}", contents),
             None => ()
@@ -71,7 +70,7 @@ fn main() -> Result<(), Box<dyn Error>>
     }
 }
 
-/// Perform a diff. Uses actual diff
+/// Perform a diff. Uses unix diff
 #[cfg(not(windows))]
 fn diff(path1: &Path, path2: &Path) -> std::io::Result<()>
 {
@@ -95,7 +94,7 @@ fn diff(path1: &Path, path2: &Path) -> std::io::Result<()>
 fn write_temp_file(string: &str) -> Result<NamedTempFile, std::io::Error>
 {                
     let mut temp_file = NamedTempFile::new()?;
-    write!(temp_file, "{}", string)?;
+    write!(temp_file, "{}", string);
     Ok(temp_file)
 }
 
