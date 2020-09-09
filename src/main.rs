@@ -12,7 +12,7 @@ type ClipResult = Result<Option<String>, Box<dyn Error>>;
 fn main() -> Result<(), Box<dyn Error>>
 {
     // Parse args
-    let args = App::new("clip")
+    let args = App::new("inclip")
         .version("0.1")
         .author("Griffin O'Neill <gsoneill1003@gmail.com>")
         .about("Echo clipboard contents")
@@ -94,7 +94,7 @@ fn diff(path1: &Path, path2: &Path) -> std::io::Result<()>
 fn write_temp_file(string: &str) -> Result<NamedTempFile, std::io::Error>
 {                
     let mut temp_file = NamedTempFile::new()?;
-    write!(temp_file, "{}", string);
+    write!(temp_file, "{}", string)?;
     Ok(temp_file)
 }
 
