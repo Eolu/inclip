@@ -31,7 +31,7 @@ fn main() -> Result<(), Box<dyn Error>>
         .get_matches();
 
     // Get clipboard contents
-    let mut context: ClipboardContext = ClipboardProvider::new().unwrap();
+    let mut context = ClipboardProvider::new()?;
 
     // Determine whether this is an echo or a diff
     if let Some(args) = args.subcommand_matches("diff") 
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>>
                 Some(contents) => diff(file_1.path(), write_temp_file(&contents)?.path(), env::args().skip(2))?,
                 None => panic!("Unexpected empty clipboard")
             },
-            // No file, but args specified. Also expecting more clipboard input
+            // No file, but args specified, expecting more clipboard input
             Some(arg) if !Path::new(arg).is_file() => match wait_for_clipboard(&mut context)?
             {
                 Some(contents) => diff(file_1.path(), write_temp_file(&contents)?.path(), env::args().skip(2))?,
@@ -72,12 +72,9 @@ fn main() -> Result<(), Box<dyn Error>>
             }
         }
     }
-    else
+    else if let Some(contents) = get_clip_contents(&mut context)?
     {
-        if let Some(contents) = get_clip_contents(&mut context)?
-        {
-            println!("{}", contents)
-        }
+        println!("{}", contents)
     }
 
     Ok(())
