@@ -10,10 +10,7 @@ FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
 
-OPTIONS:
-    -d, --diff <FILE>    Sets a custom config file
-
 SUBCOMMANDS:
-    diff    Compare clipboard contents
-    help    Prints this message or the help of the given subcommand(s)
+    diff [FILE]      Compare clipboard contents
+    help             Prints this message or the help of the given subcommand(s)
 ```
