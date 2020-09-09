@@ -84,7 +84,7 @@ fn diff(path1: &Path, path2: &Path) -> std::io::Result<()>
 #[cfg(windows)]
 fn diff(path1: &Path, path2: &Path) -> std::io::Result<()>
 {
-    Command::new("fc")
+    Command::new("fc.exe")
         .args(&[path1, path2])
         .status()
         .map(|_|())
