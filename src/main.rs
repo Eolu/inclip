@@ -1,11 +1,18 @@
-
+use std::env;
 use std::error::Error;
+use std::io::{stdin, stdout, Write, Read};
+use std::iter::once;
 use std::path::Path;
 use std::process::Command;
-use std::io::{stdin, stdout, Write, Read};
 use clap::{Arg, App, SubCommand};
 use clipboard::{ClipboardProvider, ClipboardContext};
 use tempfile::NamedTempFile;
+
+// Platform diff command
+#[cfg(not(windows))]
+const DIFF_COMMAND: &str = "diff";
+#[cfg(windows)]
+const DIFF_COMMAND: &str = "fc.exe";
 
 type ClipResult = Result<Option<String>, Box<dyn Error>>;
 
@@ -13,7 +20,8 @@ fn main() -> Result<(), Box<dyn Error>>
 {
     // Parse args
     let args = App::new("inclip")
-        .version("0.1")
+        .version("0.9.2")
+        .usage("inclip \n    inclip diff [file] [args...]")
         .author("Griffin O'Neill <gsoneill1003@gmail.com>")
         .about("Echo clipboard contents")
         .subcommand(SubCommand::with_name("diff")
@@ -41,53 +49,49 @@ fn main() -> Result<(), Box<dyn Error>>
             Some(contents) => write_temp_file(&contents),
             None => panic!("Unexpected empty clipboard")
         }?;
-        let file_1_path = file_1.path();
 
         // Determine whether or not to compare with an existing file
-        Ok(match args.value_of("file")
+        match args.value_of("file")
         {
-            Some(file) => 
-            {
-                diff(file_1_path, Path::new(file))?
-            },
+            // No file or args, expecting more clipboard input
             None => match wait_for_clipboard(&mut context)?
             {
-                Some(contents) =>
-                {
-                    diff(file_1_path, write_temp_file(&contents)?.path())?
-                },
+                Some(contents) => diff(file_1.path(), write_temp_file(&contents)?.path(), env::args().skip(2))?,
                 None => panic!("Unexpected empty clipboard")
+            },
+            // No file, but args specified. Also expecting more clipboard input
+            Some(arg) if !Path::new(arg).is_file() => match wait_for_clipboard(&mut context)?
+            {
+                Some(contents) => diff(file_1.path(), write_temp_file(&contents)?.path(), env::args().skip(2))?,
+                None => panic!("Unexpected empty clipboard")
+            },
+            // File path specified
+            Some(arg) => 
+            {
+                diff(file_1.path(), Path::new(arg), env::args().skip(3))?
             }
-        })
+        }
     }
     else
     {
-        Ok(match get_clip_contents(&mut context)?
+        if let Some(contents) = get_clip_contents(&mut context)?
         {
-            Some(contents) => println!("{}", contents),
-            None => ()
-        })
+            println!("{}", contents)
+        }
     }
+
+    Ok(())
 }
 
-/// Perform a diff. Uses unix diff
-#[cfg(not(windows))]
-fn diff(path1: &Path, path2: &Path) -> std::io::Result<()>
+/// Perform a diff
+fn diff(path1: &Path, path2: &Path, args: impl Iterator<Item = String>) -> std::io::Result<()>
 {
-    Command::new("diff")
-        .args(&[path1, path2])
+    Command::new(DIFF_COMMAND)
+        .args(once(path1.to_string_lossy().to_string())
+            .chain(once(path2.to_string_lossy().to_string()))
+            .chain(args))
         .status()
         .map(|_| ())
-}
-
-/// Perform a diff. Uses Windows fc
-#[cfg(windows)]
-fn diff(path1: &Path, path2: &Path) -> std::io::Result<()>
-{
-    Command::new("fc.exe")
-        .args(&[path1, path2])
-        .status()
-        .map(|_|())
 }
 
 /// Write a string to a temporary file
@@ -112,13 +116,13 @@ fn get_clip_contents(context: &mut ClipboardContext) -> ClipResult
 /// Pause so something can be placed on the clipboard
 fn wait_for_clipboard(mut context: &mut ClipboardContext) -> ClipResult
 {
-    let mut clipboard_contents: ClipResult = Ok(None);
+    let mut clipboard_contents = Ok(None);
     while let Ok(None) = clipboard_contents
     {
         let mut stdout = stdout();
-        stdout.write(b"Put something on the clipboard and press enter to continue...").unwrap();
-        stdout.flush().unwrap();
-        stdin().read(&mut [0]).unwrap();
+        stdout.write(b"Put something on the clipboard and press enter to continue.")?;
+        stdout.flush()?;
+        stdin().read(&mut [0])?;
         clipboard_contents = get_clip_contents(&mut context);
     }
     clipboard_contents

@@ -1,10 +1,8 @@
 [package]
 name = "inclip"
-version = "0.9.1"
+version = "1.0.0"
 authors = ["Griffin O'Neill <gsoneill1003@gmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 clap = "2.33"
