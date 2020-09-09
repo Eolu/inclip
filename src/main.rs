@@ -14,9 +14,14 @@ const DIFF_COMMAND: &str = "diff";
 #[cfg(windows)]
 const DIFF_COMMAND: &str = "fc.exe";
 
-type ClipResult = Result<Option<String>, Box<dyn Error>>;
-
+/// Entry-point
 fn main() -> Result<(), Box<dyn Error>>
+{
+    std::process::exit(inclip()?);
+}
+
+/// Main program
+fn inclip() -> Result<i32, Box<dyn Error>>
 {
     // Parse args
     let args = App::new("inclip")
@@ -34,17 +39,17 @@ fn main() -> Result<(), Box<dyn Error>>
     let mut context = ClipboardProvider::new()?;
 
     // Determine whether this is an echo or a diff
-    if let Some(args) = args.subcommand_matches("diff") 
+    Ok(if let Some(args) = args.subcommand_matches("diff") 
     {
         // Make sure there's something in the clipboard
         let clipboard_contents = match get_clip_contents(&mut context)
         {
-            Ok(None) => wait_for_clipboard(&mut context),
-            contents => contents
+            Ok(None) => Some(wait_for_clipboard(&mut context)?),
+            contents => contents?
         };
 
         // Output current clip contents to a temp file
-        let file_1 = match clipboard_contents?
+        let file_1 = match clipboard_contents
         {
             Some(contents) => write_temp_file(&contents),
             None => panic!("Unexpected empty clipboard")
@@ -53,42 +58,45 @@ fn main() -> Result<(), Box<dyn Error>>
         // Determine whether or not to compare with an existing file
         match args.value_of("file")
         {
-            // No file or args, expecting more clipboard input
-            None => match wait_for_clipboard(&mut context)?
-            {
-                Some(contents) => diff(file_1.path(), write_temp_file(&contents)?.path(), env::args().skip(2))?,
-                None => panic!("Unexpected empty clipboard")
-            },
-            // No file, but args specified, expecting more clipboard input
-            Some(arg) if !Path::new(arg).is_file() => match wait_for_clipboard(&mut context)?
-            {
-                Some(contents) => diff(file_1.path(), write_temp_file(&contents)?.path(), env::args().skip(2))?,
-                None => panic!("Unexpected empty clipboard")
-            },
             // File path specified
-            Some(arg) => 
+            Some(arg) if Path::new(arg).is_file() => 
             {
                 diff(file_1.path(), Path::new(arg), env::args().skip(3))?
+            },
+            // No file, expecting more clipboard input
+            _ => 
+            {
+                let contents = wait_for_clipboard(&mut context)?;
+                diff(file_1.path(), write_temp_file(&contents)?.path(), env::args().skip(2))?
             }
         }
     }
-    else if let Some(contents) = get_clip_contents(&mut context)?
+    else
     {
-        println!("{}", contents)
-    }
+        if let Some(contents) = get_clip_contents(&mut context)?
+        {
+            println!("{}", contents)
+        }
 
-    Ok(())
+        0
+    })
 }
 
 /// Perform a diff
-fn diff(path1: &Path, path2: &Path, args: impl Iterator<Item = String>) -> std::io::Result<()>
+fn diff(path1: &Path, path2: &Path, args: impl Iterator<Item = String>) -> Result<i32, Box<dyn Error>>
 {
-    Command::new(DIFF_COMMAND)
-        .args(once(path1.to_string_lossy().to_string())
-            .chain(once(path2.to_string_lossy().to_string()))
-            .chain(args))
-        .status()
-        .map(|_| ())
+    let args = once(path1.as_os_str().to_os_string())
+        .chain(once(path2.as_os_str().to_os_string()))
+        .chain(args.map(std::ffi::OsString::from));
+
+    match Command::new(DIFF_COMMAND).args(args).status()?
+    {
+        exit_status => match exit_status.code()
+        {
+            Some(code) => Ok(code),
+            None => Ok(0)
+        }
+    }
 }
 
 /// Write a string to a temporary file
@@ -100,7 +108,7 @@ fn write_temp_file(string: &str) -> Result<NamedTempFile, std::io::Error>
 }
 
 /// Get the contents of the clipboard
-fn get_clip_contents(context: &mut ClipboardContext) -> ClipResult
+fn get_clip_contents(context: &mut ClipboardContext) -> Result<Option<String>, Box<dyn Error>>
 {
     match context.get_contents()
     {
@@ -111,7 +119,7 @@ fn get_clip_contents(context: &mut ClipboardContext) -> ClipResult
 }
 
 /// Pause so something can be placed on the clipboard
-fn wait_for_clipboard(mut context: &mut ClipboardContext) -> ClipResult
+fn wait_for_clipboard(mut context: &mut ClipboardContext) -> Result<String, Box<dyn Error>>
 {
     let mut clipboard_contents = Ok(None);
     while let Ok(None) = clipboard_contents
@@ -122,5 +130,5 @@ fn wait_for_clipboard(mut context: &mut ClipboardContext) -> ClipResult
         stdin().read(&mut [0])?;
         clipboard_contents = get_clip_contents(&mut context);
     }
-    clipboard_contents
+    Ok(clipboard_contents?.expect("Unexpected empty clipboard"))
 }
