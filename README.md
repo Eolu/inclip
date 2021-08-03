@@ -1,6 +1,6 @@
 # inclip
 
-This is a simple terminal utility for interacting with the system clipboard that should work on most platforms. Running it with no arguments will echo the system clipboard. Running the `inclip diff [FILE]` subcommand will allow you to compare clipboard content to a file. Running `inclip diff` without a file arg will cause the program to pause and wait for input, allowing you to change the clipboard contents and compare the previous contents to the new contents.
+This is a simple terminal utility for interacting with the system clipboard that should work on most platforms. Running it with no arguments will echo the system clipboard. Running the `inclip diff [FILE]` subcommand will allow you to compare clipboard content to a file. Running `inclip diff` without a file arg will cause the program to pause and wait for input, allowing you to change the clipboard contents and compare the previous contents to the new contents. `inclip copy` can be used to echo into the clipboard (rather than from the clipboard).
 
 ```
 USAGE:
@@ -16,5 +16,8 @@ USAGE:
         included, it must come before all other
         arguments that would usually be passed to
         diff or fc.exe. 
+    inclip copy [file]
+        Echos either standard input OR a file into
+        the clipboard. 
 ```
 

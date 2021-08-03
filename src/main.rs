@@ -30,15 +30,19 @@ fn inclip() -> Result<i32, Box<dyn Error>>
         .author("Griffin O'Neill <gsoneill1003@gmail.com>")
         .about("Echo clipboard contents")
         .subcommand(SubCommand::with_name("diff")
-                    .about("Compare clipboard contents")
-                    .arg(Arg::with_name("file")
-                        .index(1)))
+            .about("Compare clipboard contents")
+            .arg(Arg::with_name("file")
+                .index(1)))
+        .subcommand(SubCommand::with_name("copy")
+            .about("Echo to clipboard")
+            .arg(Arg::with_name("file")
+                .index(1)))
         .get_matches();
 
     // Get clipboard contents
     let mut context = ClipboardProvider::new()?;
 
-    // Determine whether this is an echo or a diff
+    // Determine what sort of command this is
     Ok(if let Some(args) = args.subcommand_matches("diff") 
     {
         // Make sure there's something in the clipboard
@@ -70,6 +74,27 @@ fn inclip() -> Result<i32, Box<dyn Error>>
                 diff(file_1.path(), write_temp_file(&contents)?.path(), env::args().skip(2))?
             }
         }
+    }
+    else if let Some(args) = args.subcommand_matches("copy")
+    {
+        let contents = match args.value_of("file")
+        {
+            // File path specified
+            Some(arg) if Path::new(arg).is_file() => 
+            {
+                std::fs::read_to_string(Path::new(arg))?
+            },
+            // No file
+            _ => 
+            {
+                let mut buffer = String::new();
+                stdin().read_to_string(&mut buffer)?;
+                buffer
+            }
+        };
+        context.set_contents(contents)?;
+
+        0
     }
     else
     {
