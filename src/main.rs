@@ -26,7 +26,7 @@ fn inclip() -> Result<i32, Box<dyn Error>>
     // Parse args
     let args = App::new("inclip")
         .version("1.0.0")
-        .usage("inclip \n    inclip diff [file] [args...]")
+        .usage("inclip \n    inclip diff [file] [args...] \n inclip copy [file]")
         .author("Griffin O'Neill <gsoneill1003@gmail.com>")
         .about("Echo clipboard contents")
         .subcommand(SubCommand::with_name("diff")
